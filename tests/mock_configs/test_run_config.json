@@ -1,0 +1,32 @@
+{
+  "default": {
+    "ticker": "AAPL",
+    "start_date": "2023-01-01",
+    "end_date": "2024-12-31",
+    "strategy_id": "default",
+    "show_plot": true
+  },
+  "test_run_1": {
+    "ticker": "MSFT",
+    "strategy_id": "custom_strategy",
+    "start_date": "2020-01-01"
+  },
+  "test_run_1_full": {
+    "ticker": "MSFT",
+    "strategy_id": "custom_strategy",
+    "start_date": "2020-01-01",
+    "end_date": "2024-12-31",
+    "show_plot": true
+  },
+  "test_run_2": {
+    "ticker": "GOOGL"
+  },
+  "test_run_missing_strategy": {
+    "ticker": "TEST_MISSING",
+    "strategy_id": "non_existent_strategy"
+  },
+  "test_missing_indicator_run": {
+    "ticker": "TEST_IND_MISSING",
+    "strategy_id": "custom_strategy_missing_indicator"
+  }
+}

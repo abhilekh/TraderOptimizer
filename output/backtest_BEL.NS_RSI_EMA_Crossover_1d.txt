@@ -1,0 +1,11 @@
+--- Performance Metrics ---
+Initial Capital: $10,000.00
+Final Equity: $16,474.41
+Total Profit/Loss: $6,474.41
+Total Return (%): 64.74%
+Number of Trades: 95
+Winning Trades: 33
+Losing Trades: 62
+Win Rate (%): 34.74%
+Average Win: $549.92
+Average Loss: $-191.42

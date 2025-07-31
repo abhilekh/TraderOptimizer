@@ -1,0 +1,32 @@
+{
+    "default": {
+        "ticker": "AAPL",
+        "start_date": "2023-01-01",
+        "end_date": "2025-06-30",
+        "initial_capital": 10000,
+        "cache_dir": "data",
+        "output_dir": "output",
+        "output_filename_prefix": "backtest_results",
+        "show_plot": true,
+        "strategy_id": "default_strategy"
+    },
+    "AAPL_RSI_Aggressive_Daily": {
+        "ticker": "AAPL",
+        "strategy_id": "RSI_EMA_Crossover",
+        "timeframes": ["Daily"]
+    },
+    "MSFT_MA_Conservative_Weekly": {
+        "ticker": "MSFT",
+        "start_date": "2022-01-01",
+        "strategy_id": "MA_Conservative",
+        "initial_capital": 15000,
+        "show_plot": false,
+        "timeframes": ["Daily", "Weekly"]
+    }, 
+    "BEL_RSI_Aggressive_Daily": {
+        "ticker": "BEL.NS",
+        "timeframes": ["Daily"],
+        "base_id": "default",
+        "strategy_id": "RSI_EMA_Crossover"
+    }
+}

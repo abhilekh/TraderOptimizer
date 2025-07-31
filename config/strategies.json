@@ -1,0 +1,44 @@
+{
+    "default_strategy": {
+      "strategy_type": "RSI_EMA_Crossover",
+      "EMA_Period": 9
+    },
+    "RSI_EMA_Crossover":{
+      "strategy_type": "RSI_EMA_Crossover",
+      "strategy_params":{
+        "rsi_threshold": 50,
+        "RSI_Period": 14,
+        "MA_Period": 9,
+        "MA_TYPE": "EMA"
+      },
+      "optimization_params": {
+        "range": {
+          "RSI_Period": [5, 15],
+          "MA_Period": [5, 15]
+        },
+        "options":{
+          "MA_TYPE": ["EMA", "SMA", "WMA", "DEMA", "TEMA"]
+        }
+      }
+    },
+    "sma_crossover": {
+      "strategy_type": "Moving_Average_Crossover",
+      "Short_MA": "SMA_50",
+      "Long_MA": "SMA_200"
+    },
+    "wma_crossover": {
+      "strategy_type": "Moving_Average_Crossover",
+      "Short_MA": "WMA_30",
+      "Long_MA": "WMA_100"
+    },
+    "dema_tema_crossover": {
+      "strategy_type": "Moving_Average_Crossover",
+      "Short_MA": "DEMA_20",
+      "Long_MA": "TEMA_50"
+    },
+    "ema_crossover_fast": {
+      "strategy_type": "Moving_Average_Crossover",
+      "Short_MA": "EMA_12",
+      "Long_MA": "EMA_26"
+    }
+}

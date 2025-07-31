@@ -1,0 +1,39 @@
+{
+  "default": {
+    "strategy_type": "RSI_EMA_Crossover",
+    "indicators_needed": [
+      {
+        "indicator_id": "RSI_Period_14"
+      },
+      {
+        "indicator_id": "EMA_Period_9",
+        "on_indicator": "RSI_Period_14"
+      }
+    ],
+    "params": {
+      "rsi_threshold": 50
+    }
+  },
+  "custom_strategy": {
+    "strategy_type": "Moving_Average_Crossover",
+    "indicators_needed": [
+      {
+        "indicator_id": "SMA_Period_50",
+        "on_close": true
+      }
+    ],
+    "params": {
+      "ma_threshold": 0.05
+    }
+  },
+  "custom_strategy_missing_indicator": {
+    "strategy_type": "Moving_Average_Crossover",
+    "indicators_needed": [
+      {
+        "indicator_id": "NON_EXISTENT_SMA",
+        "on_close": true
+      }
+    ],
+    "params": {}
+  }
+}

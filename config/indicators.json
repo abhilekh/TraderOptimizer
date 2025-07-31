@@ -1,0 +1,20 @@
+{
+    "default": {
+        "RSI_Period": 14,
+        "EMA_Period": 9,
+        "Short_MA_Period": 50,
+        "Long_MA_Period": 200
+    },
+    "RSI_10": {
+        "RSI_Period": 10
+    },
+    "EMA_5": {
+        "EMA_Period": 5
+    },
+    "SMA_20": {
+        "Short_MA_Period": 20
+    },
+    "SMA_50": {
+        "Long_MA_Period": 50
+    }
+}
