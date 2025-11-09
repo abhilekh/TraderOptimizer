@@ -84,9 +84,10 @@ class Backtester:
             # Check for error in calculation result
             if 'error' in result:
                 # Log error and return 0 fees, allowing simulation to continue
-                print(f"Warning: Fee calculation failed for trade: {result['error']}")
+                print(
+                    f"Warning: Fee calculation failed for trade: {result['error']}")
                 return 0.0
-                
+
             return result.get("TOTAL TRANSACTION FEE (₹)", 0.0)
         except Exception as e:
             print(f"Error calculating fees: {e}")
@@ -122,25 +123,24 @@ class Backtester:
                 equity.iloc[i] = self.cash + holdings_value
             # --- End Equity Calculation ---
 
-
             # --- Trade Logic ---
             if self.position == POSITION.NOT_HELD:
                 if signal == SIGNAL.BUY_ENTRY:  # Long Entry
                     # 1. Total cash is the available principal for the trade
                     principal_value = self.cash
-                    
+
                     # 2. Calculate fees (Stamp Duty applies on the Buy side)
                     fees = self._get_trade_fees(
                         principal_value=principal_value,
                         trade_side=TradeSide.BUY,
                         buy_date=current_date_str
                     )
-                    
+
                     # 3. Calculate shares and update cash/shares
                     shares_capital = principal_value - fees
                     if shares_capital > 0:
                         self.shares = shares_capital / price
-                        self.cash = 0.0 # Full deployment
+                        self.cash = 0.0  # Full deployment
                         self.position = POSITION.BUY
                         current_entry_date = current_date_str
                         self.trades.append(
@@ -152,19 +152,19 @@ class Backtester:
                                 'Fees_Entry': fees
                             }
                         )
-                        
+
                 elif signal == SIGNAL.SELL_ENTRY:  # Short Entry
                     # 1. Determine size (shorting value = current cash used as collateral)
                     shares_to_short = self.cash / price
                     principal_value = shares_to_short * price
-                    
+
                     # 2. Calculate fees on the short sale principal (Sell side fees)
                     fees = self._get_trade_fees(
                         principal_value=principal_value,
                         trade_side=TradeSide.SELL,
                         sell_date=current_date_str
                     )
-                    
+
                     # 3. Update cash/shares
                     # Cash increases by the short sale value, minus the selling fees
                     self.cash += principal_value - fees
@@ -183,11 +183,12 @@ class Backtester:
 
             elif self.position == POSITION.BUY:  # In a long position
                 if signal == SIGNAL.BUY_EXIT:  # Long Close (Sell)
-                    if not self.trades or 'Exit_Date' in self.trades[-1]: continue
-                    
+                    if not self.trades or 'Exit_Date' in self.trades[-1]:
+                        continue
+
                     # 1. Calculate principal value of sale
                     principal_value = self.shares * price
-                    
+
                     # 2. Calculate fees (requires buy and sell date for delivery/intraday STT)
                     entry_date_str = self.trades[-1]['Entry_Date'].isoformat()
                     fees = self._get_trade_fees(
@@ -196,34 +197,34 @@ class Backtester:
                         buy_date=entry_date_str,
                         sell_date=current_date_str
                     )
-                    
+
                     # 3. Update cash/shares
                     # Cash received is principal minus all selling fees
                     self.cash += principal_value - fees
-                    
+
                     # Update trade record
                     self.trades[-1].update(
                         {
-                            'Exit_Date': signals_copy.index[i], 
+                            'Exit_Date': signals_copy.index[i],
                             'Exit_Price': price,
                             'Fees_Exit': fees
                         }
                     )
-                    
+
                     self.shares = 0
                     self.position = POSITION.NOT_HELD
                     current_entry_date = None
 
-
             elif self.position == POSITION.SELL:  # In a short position
                 if signal == SIGNAL.SELL_EXIT:  # Short Close (Buy to Cover)
-                    if not self.trades or 'Exit_Date' in self.trades[-1]: continue
-                    
+                    if not self.trades or 'Exit_Date' in self.trades[-1]:
+                        continue
+
                     shares_to_cover = abs(self.shares)
-                    
+
                     # 1. Calculate principal value of cover purchase
                     principal_value = shares_to_cover * price
-                    
+
                     # 2. Calculate fees (requires buy and sell date for delivery/intraday STT)
                     entry_date_str = self.trades[-1]['Entry_Date'].isoformat()
                     fees = self._get_trade_fees(
@@ -232,15 +233,15 @@ class Backtester:
                         buy_date=entry_date_str,
                         sell_date=current_date_str
                     )
-                    
+
                     # 3. Update cash/shares
                     # Cost to cover is principal + fees
-                    self.cash -= (principal_value + fees) 
-                    
+                    self.cash -= (principal_value + fees)
+
                     # Update trade record
                     self.trades[-1].update(
                         {
-                            'Exit_Date': signals_copy.index[i], 
+                            'Exit_Date': signals_copy.index[i],
                             'Exit_Price': price,
                             'Fees_Exit': fees
                         }
@@ -255,11 +256,10 @@ class Backtester:
             self.final_equity = self.equity_curve.iloc[-1]
         else:
             self.final_equity = self.initial_capital
-            
+
         # If still in a position, update final equity with current market value
         if self.position != POSITION.NOT_HELD and not self.equity_curve.empty:
-             self.final_equity = equity.iloc[-1]
-
+            self.final_equity = equity.iloc[-1]
 
     def get_trades(self) -> pd.DataFrame:
         """
@@ -270,13 +270,15 @@ class Backtester:
             return pd.DataFrame()
 
         trades_df = pd.DataFrame(self.trades)
-        
-        # Filter for completed trades 
-        completed_trades = trades_df.dropna(subset=['Exit_Price', 'Fees_Entry', 'Fees_Exit']).copy()
-        completed_trades['Shares'] = completed_trades['Shares'].abs() # Use absolute shares for P/L calculation
+
+        # Filter for completed trades
+        completed_trades = trades_df.dropna(
+            subset=['Exit_Price', 'Fees_Entry', 'Fees_Exit']).copy()
+        # Use absolute shares for P/L calculation
+        completed_trades['Shares'] = completed_trades['Shares'].abs()
 
         if not completed_trades.empty:
-            
+
             # 1. Gross Profit/Loss (P/L) before fees
             long_gross_pl = (
                 completed_trades['Exit_Price'] - completed_trades['Entry_Price']) * completed_trades['Shares']
@@ -287,18 +289,19 @@ class Backtester:
                 completed_trades['Type'] == 'Long',
                 long_gross_pl,
                 short_gross_pl)
-            
+
             # 2. Total Fees
-            completed_trades['Total Fees'] = completed_trades['Fees_Entry'] + completed_trades['Fees_Exit']
-            
+            completed_trades['Total Fees'] = completed_trades['Fees_Entry'] + \
+                completed_trades['Fees_Exit']
+
             # 3. Net P/L
-            completed_trades['Net P/L'] = completed_trades['Gross P/L'] - completed_trades['Total Fees']
-            
-            # Rename for compatibility with analyze_performance 
+            completed_trades['Net P/L'] = completed_trades['Gross P/L'] - \
+                completed_trades['Total Fees']
+
+            # Rename for compatibility with analyze_performance
             completed_trades['P/L'] = completed_trades['Net P/L']
 
         return completed_trades
-
 
     def _calculate_max_drawdown(self) -> float:
         """Calculates the maximum drawdown."""
@@ -314,13 +317,14 @@ class Backtester:
             return 0.0
         # Calculate daily returns from the equity curve
         daily_returns = self.equity_curve.pct_change().dropna()
-        
+
         # Only proceed if there are sufficient returns to calculate std dev
         if daily_returns.std() == 0 or len(daily_returns) == 0:
             return 0.0
-        
+
         # Calculate Sharpe ratio (annualized using 252 trading days)
-        sharpe_ratio = (daily_returns.mean() - risk_free_rate) / daily_returns.std()
+        sharpe_ratio = (daily_returns.mean() -
+                        risk_free_rate) / daily_returns.std()
         return sharpe_ratio * np.sqrt(252)
 
     def analyze_performance(self) -> Dict[str, Any]:

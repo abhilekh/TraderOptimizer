@@ -1,0 +1,75 @@
+{
+    "base": {
+        "description": "Default reference schedule (traditional/maximum regulatory rates).",
+        "unit_currency": "INR", # <--- RENAMED to unit_currency to avoid conflict with the asset type
+        "stocks": {
+            "broker": {
+                "rate_buy": 0.005,        # Max percentage brokerage
+                "rate_sell": 0.005,
+                "const_buy": 0.0,         # Constant fee (flat fee)
+                "const_sell": 0.0,
+                "cap_buy": 20.0,          # Max brokerage cap
+                "cap_sell": 20.0
+            },
+            "regulatory": {
+                # STT varies by delivery vs intraday for stocks
+                "stt_delivery": 0.001,           # 0.1% (Delivery Sell side only)
+                "stt_intraday": 0.00025,         # 0.025% (Intraday Buy & Sell sides in this model)
+                "etc_rate": 0.0000345,           # Exchange Transaction Charge
+                "sebi_rate": 0.0000001,          # SEBI Turnover Fee
+                "stamp_duty_rate": 0.00015,      # 0.015% (Buy side only)
+                "gst_rate": 0.18                 # 18% applied on total fees
+            }
+        },
+        "options": {
+            "broker": {
+                "rate_buy": 0.0,
+                "rate_sell": 0.0,
+                "const_buy": 20.0,
+                "const_sell": 20.0,
+                "cap_buy": 20.0,
+                "cap_sell": 20.0
+            },
+            "regulatory": {
+                "etc_rate": 0.00053,
+                "sebi_rate": 0.0000001,
+                "stamp_duty_rate": 0.00002,
+                "gst_rate": 0.18,
+                "stt_rate": 0.0005                 # 0.05% on premium (Sell side only)
+            }
+        },
+        "currency": { # This is the AssetType.CURRENCY key
+             "broker": {"rate_buy": 0.0, "rate_sell": 0.0, "const_buy": 2.0, "const_sell": 2.0, "cap_buy": 5.0, "cap_sell": 5.0},
+             "regulatory": {"etc_rate": 0.00001, "sebi_rate": 0.0000001, "stamp_duty_rate": 0.000001, "gst_rate": 0.18}
+        },
+        "crypto": {
+             "broker": {"rate_buy": 0.002, "rate_sell": 0.002, "const_buy": 0.0, "const_sell": 0.0},
+             "regulatory": {} # No Indian regulatory fees
+        }
+    },
+    "zerodha": {
+        "description": "Zerodha's schedule (Zero brokerage delivery, flat ₹20 F&O).",
+        "inherits_from": "base",
+        "stocks": {
+            "broker": {
+                "rate_buy": 0.00,       # Zero percentage for Delivery
+                "rate_sell": 0.00,
+                "cap_buy": 0.0,         # Zero brokerage cap for Delivery
+                "cap_sell": 0.0
+                # Note: For Intraday, Zerodha uses Max(0.03% * value, 20.0) - this simplified schema uses the delivery rate here.
+            }
+        }
+    },
+    "groww": {
+        "description": "Groww's schedule (Equity Delivery Brokerage is 0.00).",
+        "inherits_from": "base",
+        "stocks": {
+            "broker": {
+                "rate_buy": 0.00,
+                "rate_sell": 0.00,
+                "cap_buy": 0.0,
+                "cap_sell": 0.0
+            }
+        }
+    }
+}

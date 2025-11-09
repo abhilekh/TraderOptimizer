@@ -331,13 +331,13 @@ class UtilsJson:
     @classmethod
     def get_merged_section(
         cls, config_data: Dict[str, dict], derived_key_id: str,
-        base_key_id: str=None, base_key_identifier: str=None,
+        base_key_id: str = None, base_key_identifier: str = None,
     ) -> Dict[str, Any]:
         """
         Merges configuration sections, supporting direct base merge or an inheritance chain.
-        
+
         The 'derived' section's values override the 'base' section's values.
-        
+
         Args:
             config_data (Dict[str, dict]): The main dictionary containing all configuration sections.
             derived_key_id (str): The ID of the derived section to start with.
@@ -347,28 +347,30 @@ class UtilsJson:
                                                   that points to its parent section ID. If provided, 
                                                   it traverses the inheritance chain and merges all 
                                                   parent sections.
-                                                  
+
         Returns:
             Dict[str, Any]: The fully merged section.
         """
         # 1. Get the derived section
         if derived_key_id not in config_data:
-            raise ValueError(f"ValErr:: Derived ID '{derived_key_id}' not found in the configuration.")
-        
+            raise ValueError(
+                f"ValErr:: Derived ID '{derived_key_id}' not found in the configuration.")
+
         derived_section = config_data[derived_key_id]
-        
+
         # 2. Handle simple merge with a specific base_key_id
         if base_key_id:
             if base_key_id not in config_data:
-                 raise ValueError(f"ValErr:: Base ID '{base_key_id}' not found in the configuration.")
-            
+                raise ValueError(
+                    f"ValErr:: Base ID '{base_key_id}' not found in the configuration.")
+
             base_section = config_data[base_key_id]
-            
+
             merged_section = base_section.copy()
             # Derived section overrides base section
-            merged_section.update(derived_section) 
+            merged_section.update(derived_section)
             return merged_section
-        
+
         # 3. Handle inheritance chain using base_key_identifier
         if base_key_identifier:
             # The list of section IDs in the order they should be merged (base first).
@@ -377,63 +379,66 @@ class UtilsJson:
 
             # Traverse the inheritance chain
             current_id = derived_key_id
-            
+
             # Loop until a section doesn't have the base_key_identifier or we hit a loop/missing ID
-            max_depth = 50 # Prevent infinite loops in case of circular references not caught initially
+            max_depth = 50  # Prevent infinite loops in case of circular references not caught initially
             depth = 0
-            
+
             while True:
                 current_section = config_data.get(current_id, {})
                 depth += 1
                 if depth > max_depth:
-                    raise ValueError(f"ValErr:: Inheritance chain exceeded max depth of {max_depth}. Possible uncaught loop or excessive depth.")
-                
+                    raise ValueError(
+                        f"ValErr:: Inheritance chain exceeded max depth of {max_depth}. Possible uncaught loop or excessive depth.")
+
                 # Check for an ID loop (e.g., A -> B -> A)
-                if current_id in chain_ids[:-1]: 
-                    raise ValueError(f"ValErr:: Inheritance loop detected starting at '{derived_key_id}'. Chain: {chain_ids}")
-                
+                if current_id in chain_ids[:-1]:
+                    raise ValueError(
+                        f"ValErr:: Inheritance loop detected starting at '{derived_key_id}'. Chain: {chain_ids}")
+
                 # Check if the parent key exists in the current section
                 parent_id = current_section.get(base_key_identifier)
-                
+
                 if parent_id is None:
                     # End of the chain
                     break
-                    
+
                 if parent_id not in config_data:
                     # Parent ID is specified but not found in config_data
-                    raise ValueError(f"ValErr:: Parent ID '{parent_id}' specified in '{current_id}' not found in the configuration.")
-                
+                    raise ValueError(
+                        f"ValErr:: Parent ID '{parent_id}' specified in '{current_id}' not found in the configuration.")
+
                 # Move up the chain
                 chain_ids.append(parent_id)
                 current_id = parent_id
-            
+
             # The chain is built from derived up to the final base (e.g., [derived_2, derived_1, base_ID])
             # We need to reverse it to merge base-first: [base_ID, derived_1, derived_2]
             merge_order = list(reversed(chain_ids))
-            
+
             merged_section: Dict[str, Any] = {}
             for key_id in merge_order:
                 # Merge current section, overriding previous values.
-                # NOTE: This performs a SHALLOW merge. Nested dictionaries must be fully 
+                # NOTE: This performs a SHALLOW merge. Nested dictionaries must be fully
                 # defined in the derived section if they need to override the base.
                 merged_section.update(config_data[key_id])
-                
+
             # Remove the base_key_identifier from the final result, as it's an instruction
             if base_key_identifier in merged_section:
                 del merged_section[base_key_identifier]
 
             return merged_section
-        
+
         # 4. If neither base_key_id nor base_key_identifier, return just the derived section.
         return derived_section
-    
+
     @classmethod
     def deep_merge(cls, base_dict: Dict[Any, Any], override_dict: Dict[Any, Any]) -> Dict[Any, Any]:
         """
         Recursively merges the override_dict into a copy of the base_dict.
         Values in override_dict overwrite values in base_dict.
         If both values are dictionaries, they are merged recursively.
-        
+
         Args:
             base_dict (Dict): The dictionary to be merged into (the base config).
             override_dict (Dict): The dictionary providing overrides.
