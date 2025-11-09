@@ -6,12 +6,14 @@ import os
 from pathlib import Path
 import pandas as pd
 import yfinance as yf
-from typing import Optional, Union
+from typing import Union
+
 
 class DataManager:
     """
     Handles fetching data from Yahoo Finance and caching it locally.
     """
+
     def __init__(self, cache_dir: Union[Path, str]):
         """
         Initializes the DataManager.
@@ -22,7 +24,12 @@ class DataManager:
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
-    def _get_cache_filepath(self, ticker: str, interval: str, start_date: str, end_date: str) -> Path:
+    def _get_cache_filepath(
+            self,
+            ticker: str,
+            interval: str,
+            start_date: str,
+            end_date: str) -> Path:
         """Constructs a standardized filepath for caching."""
         filename = f"{ticker}_{interval}_{start_date}_{end_date}.csv"
         return self.cache_dir / filename
@@ -46,20 +53,30 @@ class DataManager:
         Returns:
             pd.DataFrame: A DataFrame containing the OHLCV data.
         """
-        cache_filepath = self._get_cache_filepath(ticker, interval, start_date, end_date)
-        print(f"Checking cache for {ticker} data from {start_date} to {end_date}...at {cache_filepath}")
+        cache_filepath = self._get_cache_filepath(
+            ticker, interval, start_date, end_date)
+        print(
+            f"Checking cache for {ticker} data from {start_date} to {end_date}...at {cache_filepath}")
 
         if cache_filepath.exists():
             print(f"Loading data for {ticker} from cache...")
             try:
-                data = pd.read_csv(cache_filepath, index_col='Date', parse_dates=True)
+                data = pd.read_csv(
+                    cache_filepath,
+                    index_col='Date',
+                    parse_dates=True)
                 return data
             except (IOError, pd.errors.EmptyDataError) as e:
-                print(f"Cache file for {ticker} is invalid ({e}). Redownloading...")
+                print(
+                    f"Cache file for {ticker} is invalid ({e}). Redownloading...")
 
         print(f"Downloading data for {ticker} from yfinance...")
         try:
-            data = yf.download(ticker, start=start_date, end=end_date, interval=interval)
+            data = yf.download(
+                ticker,
+                start=start_date,
+                end=end_date,
+                interval=interval)
             if data is None or data.empty:
                 print(f"No data returned for {ticker} from yfinance.")
                 return pd.DataFrame()
@@ -68,5 +85,6 @@ class DataManager:
             print(f"Data for {ticker} cached successfully.")
             return data
         except Exception as e:
-            print(f"An error occurred while downloading data for {ticker}: {e}")
+            print(
+                f"An error occurred while downloading data for {ticker}: {e}")
             return pd.DataFrame()

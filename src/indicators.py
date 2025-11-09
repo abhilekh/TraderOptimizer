@@ -1,7 +1,7 @@
 """
 This module defines the `CalculateIndicator` class, which provides class methods to compute popular technical analysis indicators such as RSI, EMA, SMA, WMA, DEMA, and TEMA. The calculations leverage the `pandas_ta` library and are designed to work with both pandas DataFrame and Series inputs. Each method validates input types and columns, and provides clear error messages for incorrect usage.
 Classes:
-    CalculateIndicator: 
+    CalculateIndicator:
         Provides class methods to calculate various technical indicators using pandas_ta.
         Methods:
             _inner_calculate_indicator(data, indicator_func_name, indicator_display_name, period, column):
@@ -24,16 +24,34 @@ Classes:
 
 from typing import Union
 import pandas as pd
-import pandas_ta as ta # Import pandas_ta as a module (ta)
+import pandas_ta as ta  # Import pandas_ta as a module (ta)
+from .constant import PRICE_TYPE
+
 
 class CalculateIndicator:
 
     @classmethod
-    def _inner_calculate_indicator(
+    def _pricetype_to_column_name(
+            cls,
+            price_type: PRICE_TYPE,
+            column_name: str):
+        conv: dict[PRICE_TYPE, str] = {
+            PRICE_TYPE.AT_MARKET_CLOSE: "Close",
+            PRICE_TYPE.AT_MARKET_OPEN: "Open",
+            PRICE_TYPE.MARKET_HIGH: "High",
+            PRICE_TYPE.MARKET_LOW: "Low",
+            PRICE_TYPE.CUSTOM: "NA"
+        }
+        if price_type == PRICE_TYPE.CUSTOM:
+            return column_name
+        return conv[price_type]
+
+    @classmethod
+    def _calculate_indicator(
         cls,
         data: Union[pd.DataFrame, pd.Series],
-        indicator_func_name: str, # 'rsi', 'ema', 'sma' etc.
-        indicator_display_name: str, # 'RSI', 'EMA', 'SMA' for error messages
+        indicator_func_name: str,  # 'rsi', 'ema', 'sma' etc.
+        indicator_display_name: str,  # 'RSI', 'EMA', 'SMA' for error messages
         period: int,
         column: str
     ) -> pd.Series:
@@ -60,49 +78,55 @@ class CalculateIndicator:
             AttributeError: If the pandas_ta method name is incorrect.
         """
         indicator_result: pd.Series
-        
+
         # Try block for direct pandas_ta calls and input data checks
         try:
             if isinstance(data, pd.DataFrame):
                 if column not in data.columns:
-                    raise ValueError( # This ValueError should propagate directly
+                    raise ValueError(  # This ValueError should propagate directly
                         f"Column '{column}' not found in DataFrame for "
                         f"'{indicator_display_name}' calculation."
                     )
                 method = getattr(data.ta, indicator_func_name)
                 indicator_result = method(close=data[column], length=period)
-                
+
             elif isinstance(data, pd.Series):
                 method = getattr(ta, indicator_func_name)
                 indicator_result = method(close=data, length=period)
             else:
-                raise TypeError( # This TypeError should propagate directly
+                raise TypeError(  # This TypeError should propagate directly
                     f"Input 'data' must be a pandas DataFrame or Series for "
                     f"'{indicator_display_name}' calculation."
                 )
-        
+
         except (ValueError, TypeError) as err:
             raise err
-       
+
         # Catch specific pandas_ta related errors
         except AttributeError as err:
-            # This catches errors if indicator_func_name is not found on .ta or ta module
-            raise TypeError( # Re-raise as TypeError for incorrect method access
+            # This catches errors if indicator_func_name is not found on .ta or
+            # ta module
+            raise TypeError(  # Re-raise as TypeError for incorrect method access
                 f"Method name '{indicator_func_name}' not found for "
                 f"'{indicator_display_name}' calculation. Error: {err}"
             ) from err
-        
+
         # Do NOT catch ValueError or TypeError here, allow them to propagate
         # Catch any other truly unexpected errors and wrap them in RuntimeError
         except Exception as err:
             raise RuntimeError(
                 f"An unexpected error occurred during '{indicator_display_name}' calculation: {err}"
             ) from err
-                
+
         return indicator_result
 
     @classmethod
-    def calculate_rsi(cls, data: pd.DataFrame, period: int) -> pd.Series:
+    def calculate_rsi(
+            cls,
+            data: pd.DataFrame,
+            period: int,
+            price_type: PRICE_TYPE = PRICE_TYPE.AT_MARKET_CLOSE,
+            cname: str = None) -> pd.Series:
         """
         Calculates Relative Strength Index (RSI).
         Expects 'Close' column in the DataFrame.
@@ -114,20 +138,24 @@ class CalculateIndicator:
         Returns:
             pd.Series: A Series containing RSI values.
         """
-        return cls._inner_calculate_indicator(
+        cname: str = cls._pricetype_to_column_name(
+            price_type=price_type, column_name=cname)
+
+        return cls._calculate_indicator(
             data=data,
             indicator_func_name='rsi',
             indicator_display_name='RSI',
             period=period,
-            column='Close' # RSI is always calculated on Close price of a DataFrame
+            column=cname  # RSI is always calculated on Close price of a DataFrame
         )
 
     @classmethod
     def calculate_ema(cls,
-        data: Union[pd.DataFrame, pd.Series],
-        period: int,
-        column: str = 'Close'
-    ) -> pd.Series:
+                      data: Union[pd.DataFrame, pd.Series],
+                      period: int,
+                      price_type: PRICE_TYPE = PRICE_TYPE.AT_MARKET_CLOSE,
+                      column: str = None
+                      ) -> pd.Series:
         """
         Calculates Exponential Moving Average (EMA).
         Can accept a DataFrame (and a column name) or a Series directly.
@@ -140,12 +168,14 @@ class CalculateIndicator:
         Returns:
             pd.Series: A Series containing EMA values.
         """
-        return cls._inner_calculate_indicator(
+        cname: str = cls._pricetype_to_column_name(
+            price_type=price_type, column_name=column)
+        return cls._calculate_indicator(
             data=data,
             indicator_func_name='ema',
             indicator_display_name='EMA',
             period=period,
-            column=column
+            column=cname
         )
 
     @classmethod
@@ -153,7 +183,8 @@ class CalculateIndicator:
         cls,
         data: Union[pd.DataFrame, pd.Series],
         period: int,
-        column: str = 'Close'
+        price_type: PRICE_TYPE = PRICE_TYPE.AT_MARKET_CLOSE,
+        column: str = None
     ) -> pd.Series:
         """
         Calculates Simple Moving Average (SMA).
@@ -167,7 +198,9 @@ class CalculateIndicator:
         Returns:
             pd.Series: A Series containing SMA values.
         """
-        return cls._inner_calculate_indicator(
+        cname: str = cls._pricetype_to_column_name(
+            price_type=price_type, column_name=column)
+        return cls._calculate_indicator(
             data=data,
             indicator_func_name='sma',
             indicator_display_name='SMA',
@@ -177,8 +210,9 @@ class CalculateIndicator:
 
     @classmethod
     def calculate_wma(
-        cls, data: Union[pd.DataFrame, pd.Series],
-        period: int, column: str = 'Close') -> pd.Series:
+            cls, data: Union[pd.DataFrame, pd.Series],
+            period: int, price_type: PRICE_TYPE = PRICE_TYPE.AT_MARKET_CLOSE,
+            column: str = None) -> pd.Series:
         """
         Calculates the Weighted Moving Average (WMA) for a given data series.
 
@@ -197,18 +231,21 @@ class CalculateIndicator:
         Example:
             >>> calculate_wma(df, period=10, column='Close')
         """
-        return cls._inner_calculate_indicator(
+        cname: str = cls._pricetype_to_column_name(
+            price_type=price_type, column_name=column)
+        return cls._calculate_indicator(
             data=data,
             indicator_func_name='wma',
             indicator_display_name='WMA',
             period=period,
-            column=column
+            column=cname
         )
 
     @classmethod
     def calculate_dema(
-        cls, data: Union[pd.DataFrame, pd.Series],
-        period: int, column: str = 'Close') -> pd.Series:
+            cls, data: Union[pd.DataFrame, pd.Series],
+            period: int, price_type: PRICE_TYPE = PRICE_TYPE.AT_MARKET_CLOSE,
+            column: str = None) -> pd.Series:
         """
         Calculates the Double Exponential Moving Average (DEMA) for a given data series.
 
@@ -225,31 +262,35 @@ class CalculateIndicator:
 
         Notes:
             DEMA is a technical indicator that aims to reduce the lag of traditional moving averages, providing a more responsive trend-following indicator.
-        
+
         """
-        return cls._inner_calculate_indicator(
+        cname: str = cls._pricetype_to_column_name(
+            price_type=price_type, column_name=column)
+        return cls._calculate_indicator(
             data=data,
             indicator_func_name='dema',
             indicator_display_name='DEMA',
             period=period,
-            column=column
+            column=cname
         )
 
     @classmethod
     def calculate_tema(
-        cls, data: Union[pd.DataFrame, pd.Series],
-        period: int, column: str = 'Close') -> pd.Series:
+            cls, data: Union[pd.DataFrame, pd.Series],
+            period: int, price_type: PRICE_TYPE = PRICE_TYPE.AT_MARKET_CLOSE,
+            column: str = None) -> pd.Series:
         """
         Calculates the Triple Exponential Moving Average (TEMA).
         """
-        return cls._inner_calculate_indicator(
+        cname: str = cls._pricetype_to_column_name(
+            price_type=price_type, column_name=column)
+        return cls._calculate_indicator(
             data=data,
             indicator_func_name='tema',
             indicator_display_name='TEMA',
             period=period,
-            column=column
+            column=cname
         )
-
 
     # Add more indicator calculation functions here as needed (e.g., calculate_macd, calculate_stoch)
     # Example:
